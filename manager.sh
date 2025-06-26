@@ -1,5 +1,31 @@
 #!/bin/bash
 
+ACTION=$1
+shift
+FOLDER="live-build"    
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -f) FOLDER="$2"; shift ;;
+        -l) LUXURY=1 ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+    shift
+done
+
+
+add_custom_python_packages(){
+    echo "#!/bin/bash
+
+echo "[+] Installing Python packages via pip inside chroot..."
+
+# Optional: Upgrade pip itself
+python3 -m pip install --upgrade pip --break-system-packages
+
+# Install desired packages
+python3 -m pip install qt-material --break-system-packages" > config/hooks/live/0999-python-pip-install.chroot
+}
+
 
 
 add_apt_sources() {
@@ -28,86 +54,125 @@ run_config(){
           --bootloaders "syslinux,grub-efi"
 }
 
-add_packages(){
+add_luxury_packages(){
+    echo "live-task-lxqt
+lxqt-about
+lxqt-admin
+lxqt-branding-debian
+lxqt-config
+lxqt-core
+lxqt-globalkeys
+lxqt-notificationd
+lxqt-openssh-askpass
+lxqt-panel
+lxqt-policykit
+lxqt-powermanagement
+lxqt-qtplugin
+lxqt-runner
+lxqt-session
+lxqt-sudo
+adwaita-icon-theme
+lxqt-theme-debian
+gdisk
+hardinfo
+konqueror" >> config/package-lists/live.list.chroot 
+}
+add_minimal_lxqt_packages(){
     echo "live-boot
-    live-config
-    live-config-systemd
-    systemd-sysv
-    wpasupplicant
-    network-manager
-    lshw
-    python3
-    python3-pyqt5
-    firmware-amd-graphics
-    firmware-ast
-    firmware-ath9k-htc
-    firmware-atheros
-    firmware-bnx2
-    firmware-bnx2x
-    firmware-brcm80211
-    firmware-cavium
-    firmware-intel-sound
-    firmware-ipw2x00
-    firmware-ivtv
-    firmware-iwlwifi
-    firmware-libertas
-    firmware-linux
-    firmware-linux-free
-    firmware-linux-nonfree
-    firmware-misc-nonfree
-    firmware-myricom
-    firmware-netronome
-    firmware-netxen
-    firmware-nvidia-tesla-535-gsp
-    firmware-qlogic
-    firmware-realtek
-    firmware-realtek-rtl8723cs-bt
-    firmware-siano
-    firmware-sof-signed
-    firmware-tomu
-    firmware-zd1211
-    qtbase5-dev
-    qtchooser
-    qt5-qmake
-    qtbase5-dev-tools
-    task-lxqt-desktop
-    sddm
-    iputils-ping
-    nvme-cli
-    hdparm
-    fswebcam
-    hwinfo
-    pciutils
-    sudo
-    ntpdate
-    lftp" > config/package-lists/live.list.chroot 
+live-config
+live-config-systemd
+systemd-sysv
+wpasupplicant
+network-manager
+lshw
+python3
+python3-pyqt5
+python3-pyqt5.qtsvg
+python3-pip
+firmware-amd-graphics
+firmware-ast
+firmware-ath9k-htc
+firmware-atheros
+firmware-bnx2
+firmware-bnx2x
+firmware-brcm80211
+firmware-cavium
+firmware-intel-sound
+firmware-ipw2x00
+firmware-ivtv
+firmware-iwlwifi
+firmware-libertas
+firmware-linux
+firmware-linux-free
+firmware-linux-nonfree
+firmware-misc-nonfree
+firmware-myricom
+firmware-netronome
+firmware-netxen
+firmware-nvidia-tesla-535-gsp
+firmware-qlogic
+firmware-realtek
+firmware-realtek-rtl8723cs-bt
+firmware-siano
+firmware-sof-signed
+firmware-tomu
+firmware-zd1211
+qtbase5-dev
+qtchooser
+qt5-qmake
+qtbase5-dev-tools
+task-lxqt-desktop
+sddm
+iputils-ping
+nvme-cli
+hdparm
+fswebcam
+hwinfo
+pciutils
+sudo
+ntpdate
+lftp
+pulseaudio
+pulseaudio-utils
+alsa-utils
+smartmontools" > config/package-lists/live.list.chroot 
 }
 create_new_build(){
-    mkdir ./live-build/
-    cd live-build
+    mkdir $FOLDER
+    cd $FOLDER
     run_config
     add_apt_sources
-    add_packages
+    add_minimal_lxqt_packages
+    if [ -n "$LUXURY" ]; then
+        echo "adding luxury packages"
+        add_luxury_packages  
+    fi
+    add_custom_python_packages
     sudo lb build
 }
 clean(){
     #echo "deleting live build folder"
     #sudo rm -rf live-build
-    cd live-build
+    cd $FOLDER
     sudo lb clean --purge
     cd ..
 }
 
 help(){
-    echo "No option provided"
-    echo "options: 
+    echo "./script.sh action <options>"
+    echo "actions: 
     build (make live-build folder, lb config, copy packages and apt sources, then build)
     rebuild (rm -rf live-build folder, then calls build)"
+    echo "options:
+    -l add luxury packages
+    -f folder name (default:live-build)
+    "
 }
 
 #mkdir ./live_build_$RANDOM
 
-case $1 in
+
+case $ACTION in
     build)
     create_new_build
     ;;
