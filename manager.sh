@@ -135,8 +135,15 @@ lftp
 pulseaudio
 pulseaudio-utils
 alsa-utils
-smartmontools" > config/package-lists/live.list.chroot 
+smartmontools
+sg3-utils
+util-linux" > config/package-lists/live.list.chroot 
 }
+
+add_usb_root_identifier(){
+    echo "UsbRootIdentifier" > config/includes.binary/UsbRootIdentifier
+}
+
 create_new_build(){
     mkdir $FOLDER
     cd $FOLDER
@@ -148,11 +155,10 @@ create_new_build(){
         add_luxury_packages  
     fi
     add_custom_python_packages
+    add_usb_root_identifier
     sudo lb build
 }
 clean(){
-    #echo "deleting live build folder"
-    #sudo rm -rf live-build
     cd $FOLDER
     sudo lb clean --purge
     cd ..
