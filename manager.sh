@@ -13,6 +13,45 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
+isovolume="ITAD OS" 
+isopublisher="Michael Knudsen" 
+isoapplication="ITAD Platform (Debian 12)" 
+
+build_mkgriso_file(){
+    OUTPUT_SCRIPT="config/includes.binary/mkgriso"
+    cat > "$OUTPUT_SCRIPT" << 'EOF'
+#!/bin/sh
+VOLUME="VOLUME_PLACEHOLDER"
+APP="APP_PLACEHOLDER"
+DIR=$(readlink -f $(dirname $0))
+echo $DIR
+ISO=$DIR/../$1
+echo $ISO
+xorriso -as mkisofs \
+ -isohybrid-mbr isolinux/isohdpfx.bin \
+ -hide-rr-moved \
+ -f \
+ -r \
+ -J \
+ -l \
+ -V "$VOLUME" \
+ -A "$APP" \
+ -b isolinux/isolinux.bin \
+ -c isolinux/boot.cat \
+ -no-emul-boot \
+ -boot-load-size 4 \
+ -boot-info-table \
+ -eltorito-alt-boot \
+ -isohybrid-gpt-basdat \
+ -e EFI/boot/grubx64.efi \
+ -no-emul-boot \
+ -o $ISO \
+ $DIR
+EOF
+    sed -i "s/VOLUME_PLACEHOLDER/$isovolume/" "$OUTPUT_SCRIPT"
+    sed -i "s/APP_PLACEHOLDER/$isoapplication/" "$OUTPUT_SCRIPT"
+
+}
 
 add_custom_python_packages(){
     echo "#!/bin/bash
@@ -45,9 +84,9 @@ run_config(){
           --cache-stages "bootstrap,chroot" \
           --archive-areas "main contrib non-free non-free-firmware" \
           --apt-options "--no-install-recommends --yes" \
-          --iso-volume "ITAD OS" \
-          --iso-publisher "Michael Knudsen" \
-          --iso-application "ITAD Platform (Debian 12)" \
+          --iso-volume "$isovolume" \
+          --iso-publisher "$isopublisher" \
+          --iso-application "$isoapplication" \
           --debootstrap-options "--variant=minbase" \
           --bootappend-live "boot=live components hostname=live-host username=root toram" \
           --binary-images "iso-hybrid" \
@@ -156,6 +195,7 @@ create_new_build(){
     fi
     add_custom_python_packages
     add_usb_root_identifier
+    build_mkgriso_file
     sudo lb build
 }
 clean(){
