@@ -28,7 +28,7 @@ echo $DIR
 ISO=$DIR/../$1
 echo $ISO
 xorriso -as mkisofs \
- -isohybrid-mbr isolinux/isohdpfx.bin \
+ -isohybrid-mbr isohdpfx.bin \
  -hide-rr-moved \
  -f \
  -r \
@@ -50,7 +50,11 @@ xorriso -as mkisofs \
 EOF
     sed -i "s/VOLUME_PLACEHOLDER/$isovolume/" "$OUTPUT_SCRIPT"
     sed -i "s/APP_PLACEHOLDER/$isoapplication/" "$OUTPUT_SCRIPT"
-
+    sudo chmod +x "$OUTPUT_SCRIPT"
+    if [ ! -f "/usr/lib/ISOLINUX/isohdpfx.bin" ]; then 
+        sudo apt install isolinux -y 
+    fi
+    cp /usr/lib/ISOLINUX/isohdpfx.bin config/includes.binary/isohdpfx.bin
 }
 
 add_custom_python_packages(){
@@ -176,7 +180,8 @@ pulseaudio-utils
 alsa-utils
 smartmontools
 sg3-utils
-util-linux" > config/package-lists/live.list.chroot 
+util-linux
+isolinux" > config/package-lists/live.list.chroot 
 }
 
 add_usb_root_identifier(){
