@@ -15,7 +15,8 @@ done
 
 isovolume="ITAD OS" 
 isopublisher="Michael Knudsen" 
-isoapplication="ITAD Platform (Debian 12)" 
+isoapplication="ITAD Platform (Debian 12)"
+isoimagename="ITAD_OS"
 
 build_mkgriso_file(){
     OUTPUT_SCRIPT="config/includes.binary/mkgriso"
@@ -94,7 +95,8 @@ run_config(){
           --debootstrap-options "--variant=minbase" \
           --bootappend-live "boot=live components hostname=live-host username=root toram" \
           --binary-images "iso-hybrid" \
-          --bootloaders "syslinux,grub-efi"
+          --bootloaders "syslinux,grub-efi" \
+          --image-name "$isoimagename"
 }
 
 add_luxury_packages(){
@@ -201,7 +203,7 @@ create_new_build(){
     add_custom_python_packages
     add_usb_root_identifier
     build_mkgriso_file
-    sudo lb build
+    sudo lb build --verbose --debug
 }
 clean(){
     cd $FOLDER
