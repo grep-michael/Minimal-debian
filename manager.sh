@@ -29,25 +29,32 @@ echo $DIR
 ISO=$DIR/../$1
 echo $ISO
 xorriso -as mkisofs \
- -isohybrid-mbr isohdpfx.bin \
- -hide-rr-moved \
- -f \
- -r \
- -J \
- -l \
- -V "$VOLUME" \
- -A "$APP" \
- -b isolinux/isolinux.bin \
- -c isolinux/boot.cat \
- -no-emul-boot \
- -boot-load-size 4 \
- -boot-info-table \
- -eltorito-alt-boot \
- -isohybrid-gpt-basdat \
- -e EFI/boot/grubx64.efi \
- -no-emul-boot \
- -o $ISO \
- $DIR
+  -R \
+  -r \
+  -J \
+  -joliet-long \
+  -l \
+  -cache-inodes \
+  -iso-level 3 \
+  -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin \
+  -partition_offset 16 \
+  -v \
+  -A "$APP" \
+  -p "live-build 20230502; https://salsa.debian.org/live-team/live-build" \
+  -publisher "$PUBLISHER" \
+  -V "$VOLUME" \
+  -b isolinux/isolinux.bin \
+  -c isolinux/boot.cat \
+  -no-emul-boot \
+  -boot-load-size 4 \
+  -boot-info-table \
+  -eltorito-alt-boot \
+  -e boot/grub/efi.img \
+  -no-emul-boot \
+  -isohybrid-gpt-basdat \
+  -isohybrid-apm-hfsplus \
+  -o $ISO \
+  $DIR
 EOF
     sed -i "s/VOLUME_PLACEHOLDER/$isovolume/" "$OUTPUT_SCRIPT"
     sed -i "s/APP_PLACEHOLDER/$isoapplication/" "$OUTPUT_SCRIPT"
